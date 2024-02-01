@@ -31,6 +31,8 @@ class MarriageApp extends StatelessWidget {
       DeviceOrientation.portraitDown,
     ]);
 
+    // TODO: Update the userList function of the API on Hostinger so as to also collect the `id` of each user returned
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Marriage App',

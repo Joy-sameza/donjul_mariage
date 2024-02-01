@@ -143,8 +143,8 @@ class _UserListState extends State<UserList> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? adminId = prefs.getInt('admin_id');
     GetData getData = GetData();
-    await getData.loadUsers(adminId: adminId);
-    Future.delayed(const Duration(milliseconds: 1500));
+    await getData.loadUsers(adminId: adminId ?? 0);
+    // Future.delayed(const Duration(milliseconds: 1500));
     if (getData.status != 200) {
       setState(() => _isLoading = false);
       setState(() => _errorLoading = true);

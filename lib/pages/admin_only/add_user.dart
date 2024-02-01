@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:marriage_app/functional_classes/post_data.dart';
+import 'package:marriage_app/functional_classes/user.dart';
+import 'package:marriage_app/functions/build_small_button.dart';
 import 'package:marriage_app/functions/snack_bar_method.dart';
 import 'package:marriage_app/config/config.dart';
+import 'package:marriage_app/pages/login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AddUser extends StatefulWidget {
@@ -15,6 +18,11 @@ class AddUser extends StatefulWidget {
 class _AddUserState extends State<AddUser> {
   final _formKey = GlobalKey<FormState>();
   late int adminId;
+  late String relativePath;
+  User? user;
+  String? submitAction;
+  ButtonState state = ButtonState.init;
+  bool _isAnimating = true;
 
   String username = '',
       password = '',
@@ -34,11 +42,31 @@ class _AddUserState extends State<AddUser> {
     final Size screenSize = MediaQuery.of(context).size;
     final double snackBarWidth = screenSize.width * 0.75;
     final double formHeight = screenSize.height * 0.525;
-    var appColorScheme = Theme.of(context).colorScheme;
+    final ColorScheme appColorScheme = Theme.of(context).colorScheme;
+
+    bool isLoading = _isAnimating || state == ButtonState.init;
+    bool isDone = state == ButtonState.done;
 
     final routingData = ModalRoute.of(context)!.settings.arguments as Map?;
     if (routingData != null && routingData.containsKey('adminId')) {
       adminId = routingData['adminId'] as int;
+    }
+
+    if (routingData != null &&
+        routingData.containsKey('user') &&
+        routingData.containsKey('submitAction')) {
+      user = routingData['user'] as User;
+      submitAction = routingData['submitAction'] as String;
+    }
+
+    String getActionText() {
+      if (submitAction == 'update') {
+        relativePath = 'update';
+        return 'Edit user';
+      } else {
+        relativePath = 'register';
+        return 'New user';
+      }
     }
 
     return Scaffold(
@@ -62,7 +90,7 @@ class _AddUserState extends State<AddUser> {
                   children: [
                     Center(
                       child: Text(
-                        'New user',
+                        getActionText(),
                         style: TextStyle(
                           fontSize: Theme.of(context)
                               .textTheme
@@ -87,6 +115,7 @@ class _AddUserState extends State<AddUser> {
                       Expanded(
                         child: TextFormField(
                           autovalidateMode: AutovalidateMode.onUserInteraction,
+                          initialValue: user?.actualName,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter the user\'s name in order to register';
@@ -134,6 +163,7 @@ class _AddUserState extends State<AddUser> {
                           child: TextFormField(
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
+                            initialValue: user?.telephone,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your telephone number in order to Configuration';
@@ -188,58 +218,75 @@ class _AddUserState extends State<AddUser> {
             alignment: Alignment.bottomCenter,
             height: formHeight + 27.5,
             width: screenSize.width * 0.9,
-            child: ElevatedButton(
-                onPressed: () async {
-                  if (!_formKey.currentState!.validate()) {
-                    return;
-                  }
-                  // Unfocused keyboard
-                  FocusScope.of(context).unfocus();
-                  _formKey.currentState!.save();
-                  SharedPreferences prefs = await SharedPreferences.getInstance();
-                  adminId = prefs.getInt('admin_id') ?? 0;
-                  PostData send = await PostData.submitData(
-                      relativePath: 'register',
-                      actualName: actualName,
-                      telephone: telephone,
-                      adminReference: adminId);
-                  Map<String, dynamic> response = send.data;
-                  if (await response['error'] != null ||
-                      await response['status'] != 201) {
-                    // ignore: use_build_context_synchronously
-                    await snackBarMethod(
-                      context: context,
-                      response:
-                          await response['message'] ?? await response['error'],
-                      duration: 8,
-                      width: snackBarWidth,
-                    );
-                    if (kDebugMode) {
-                      print(response);
-                    }
-                    return;
-                  }
-                  // ignore: use_build_context_synchronously
-                  Navigator.pushReplacementNamed(context, '/admin/user_list');
-                },
-                style: ButtonStyle(
-                  elevation: MaterialStateProperty.all(20),
-                  padding: MaterialStateProperty.all(
-                      const EdgeInsets.symmetric(vertical: 15, horizontal: 30)),
-                  backgroundColor:
-                      MaterialStateProperty.all(Configuration.mainBlue),
-                  foregroundColor: MaterialStateProperty.all(
-                    Colors.white,
-                  ),
-                  shape: const MaterialStatePropertyAll(
-                    RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(100))),
-                  ),
-                ),
-                child: Icon(Icons.arrow_forward_rounded, size: 30, color: appColorScheme.secondary)),
+            child: AnimatedContainer(
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeIn,
+              alignment: Alignment.bottomCenter,
+              height: formHeight * 1.01,
+              width: state != ButtonState.init
+                  ? screenSize.width * 0.09
+                  : screenSize.width * 0.9,
+              onEnd: () => setState(() => _isAnimating = !_isAnimating),
+              child: isLoading
+                  ? _buildElevatedButton(context, snackBarWidth, appColorScheme)
+                  : buildSmallButton(isDone),
+            ),
           ),
         ]),
       ),
     );
+  }
+
+  ElevatedButton _buildElevatedButton(
+      BuildContext context, double snackBarWidth, ColorScheme appColorScheme) {
+    return ElevatedButton(
+      onPressed: () => _submitForm(context, snackBarWidth),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Configuration.mainBlue,
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontSize: 18),
+        minimumSize: const Size(80, 60),
+      ),
+      child: Icon(
+        Icons.arrow_forward_rounded,
+        size: 30,
+        color: appColorScheme.background,
+      ),
+    );
+  }
+
+  // TODO: handle the update of the user
+
+  void _submitForm(BuildContext context, double snackBarWidth) async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Unfocused keyboard
+    FocusScope.of(context).unfocus();
+    _formKey.currentState!.save();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    adminId = prefs.getInt('admin_id') ?? 0;
+    PostData send = await PostData.submitData(
+        relativePath: relativePath,
+        actualName: actualName,
+        telephone: telephone,
+        adminReference: adminId);
+    Map<String, dynamic> response = send.data;
+    if (await response['error'] != null || await response['status'] != 201) {
+      // ignore: use_build_context_synchronously
+      await snackBarMethod(
+        context: context,
+        response: await response['message'] ?? await response['error'],
+        duration: 8,
+        width: snackBarWidth,
+      );
+      if (kDebugMode) {
+        print(response);
+      }
+      return;
+    }
+    // ignore: use_build_context_synchronously
+    Navigator.pushReplacementNamed(context, '/admin/user_list');
   }
 }

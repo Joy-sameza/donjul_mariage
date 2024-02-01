@@ -35,26 +35,30 @@ class _UserDetailsState extends State<UserDetails> {
             icon: const Icon(Icons.more_vert),
             tooltip: 'Show menu',
             color: appColorScheme.secondaryContainer,
-            onSelected: (UserAction value) {
-              setState(() {
-                _userAction = value;
-              });
-            },
-            itemBuilder: (itemContext) {
-              return [
-                PopupMenuItem(
-                  onTap: () {
-                    Navigator.pushNamed(
+            onSelected: (value) {
+              switch (value) {
+                case UserAction.edit:
+                  Navigator.pushNamed(
                       context,
                       '/admin/add_user',
                       arguments: {
                         'user': user,
                         'submitAction': 'update',
                       }
-                    );
-                  },
+                  );
+                  break;
+                case UserAction.delete:
+                  // TODO: Handle this case.
+                  break;
+                default:
+                  break;
+              }
+            },
+            itemBuilder: (itemContext) {
+              return [
+                const PopupMenuItem(
                   value: UserAction.edit,
-                  child: const Text('Edit the user'),
+                  child: Text('Edit the user'),
                 ),
                 const PopupMenuItem(
                   value: UserAction.delete,

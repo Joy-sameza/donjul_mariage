@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:marriage_app/config/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum HeaderActions { logout }
+
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
 
@@ -29,60 +31,85 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          actions: const [],
-          backgroundColor: Configuration.primaryAppColor,
-          title: Text(
-            'Donjul Marriage',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onBackground,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+      appBar: AppBar(
+        actions: [
+          PopupMenuButton(
+            onSelected: (value) async {
+              if (value == HeaderActions.logout) {
+                SharedPreferences preferences =
+                    await SharedPreferences.getInstance();
+                await preferences.clear();
+                // ignore: use_build_context_synchronously
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<HeaderActions>(
+                  value: HeaderActions.logout,
+                  child: Text(
+                    'Logout',
+                    style: TextStyle(
+                      fontWeight:
+                          Theme.of(context).textTheme.titleMedium?.fontWeight,
+                    ),
+                  ),
+                ),
+              ];
+            },
+          )
+        ],
+        backgroundColor: Configuration.primaryAppColor,
+        title: Text(
+          'Donjul Marriage',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onBackground,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
           ),
-          centerTitle: true,
         ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 48),
-          child: Column(
-            children: _superButtonList(context, [
-              [
-                {
-                  'icon': Icons.person_add_alt,
-                  'buttonText': 'Add user',
-                  'buttonSubData': '',
-                  'routeName': '/admin/add_user',
-                },
-                {
-                  'icon': Icons.list_alt,
-                  'buttonText': 'User list',
-                  'buttonSubData':
-                      '$usersTotal user${usersTotal > 1 ? 's' : ''}',
-                  'routeName': '/admin/user_list',
-                }
-              ],
-              [
-                {
-                  'icon': Icons.person_add,
-                  'buttonText': 'Add guest',
-                  'buttonSubData': '',
-                  'routeName': '/admin/add_guest',
-                },
-                {
-                  'icon': Icons.list,
-                  'buttonText': 'Guest list',
-                  'buttonSubData': '0 guest',
-                  'routeName': '/admin/guest_list',
-                }
-              ],
-            ]),
-          ),
-        ));
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 48),
+        child: Column(
+          children: _superButtonList(context, [
+            [
+              {
+                'icon': Icons.person_add_alt,
+                'buttonText': 'Add user',
+                'buttonSubData': '',
+                'routeName': '/admin/add_user',
+              },
+              {
+                'icon': Icons.list_alt,
+                'buttonText': 'User list',
+                'buttonSubData': '$usersTotal user${usersTotal > 1 ? 's' : ''}',
+                'routeName': '/admin/user_list',
+              }
+            ],
+            [
+              {
+                'icon': Icons.person_add,
+                'buttonText': 'Add guest',
+                'buttonSubData': '',
+                'routeName': '/admin/add_guest',
+              },
+              {
+                'icon': Icons.list,
+                'buttonText': 'Guest list',
+                'buttonSubData': '0 guest',
+                'routeName': '/admin/guest_list',
+              }
+            ],
+          ]),
+        ),
+      ),
+    );
   }
 
   List<Widget> _superButtonList(
       BuildContext context, List<List<Map<String, dynamic>>> rowsData) {
-
     List<Widget> out = [
       Text(
         'Actions',
@@ -153,13 +180,15 @@ class _AdminHomeState extends State<AdminHome> {
                             ),
                           ),
                           const SizedBox(),
-                          Text(buttonSubData,
-                              style: TextStyle(
-                                  fontSize: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall!
-                                          .fontSize! *
-                                      0.8)),
+                          Text(
+                            buttonSubData,
+                            style: TextStyle(
+                                fontSize: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall!
+                                        .fontSize! *
+                                    0.8),
+                          ),
                         ],
                       )
                     : Text(

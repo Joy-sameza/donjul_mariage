@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
 import 'package:marriage_app/config/config.dart';
 
-/// Send data to server
+/// Send data to server using HTTP POST request and receive response as JSON
 class PostData {
   PostData(
       {required this.username,
@@ -18,6 +18,7 @@ class PostData {
   String? telephone, authToken, actualName, adminReference;
   final String _url = Configuration.apiUri;
   late Map<String, dynamic> data;
+  static const timeoutDelay = Duration(seconds: Configuration.timeout);
 
   Future<Map<String, dynamic>> postData({required String relativePath}) async {
     var body = {
@@ -32,11 +33,10 @@ class PostData {
         Uri.parse('$_url/$relativePath'),
         headers: {
           'Content-Type': 'application/json',
-          "Access-Control-Allow-Origin": "*"
+          "Access-Control-Allow-Origin": _url
         },
         body: dataBody,
-        encoding: Encoding.getByName('utf-8'),
-      ).timeout(const Duration(seconds: Configuration.timeout));
+      ).timeout(timeoutDelay);
       var r = jsonDecode(response.body) as Map<String, dynamic>;
       r['status'] = response.statusCode;
       if (kDebugMode) {
@@ -57,15 +57,16 @@ class PostData {
 
   Future<Map<String, dynamic>> verifyToken() async {
     try {
+      var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authToken',
+        "accept-encoding": "gzip, deflate, br",
+        "Access-Control-Allow-Origin": _url
+      };
       Response response = await get(
         Uri.parse('$_url/isVerified'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-          "accept-encoding": "gzip, deflate, br",
-          "Access-Control-Allow-Origin": "*"
-        },
-      );
+        headers: headers,
+      ).timeout(timeoutDelay);
       var result = jsonDecode(response.body) as Map<String, dynamic>;
       result['status'] = response.statusCode;
       return result;
@@ -79,13 +80,16 @@ class PostData {
       Response response = await post(Uri.parse('$_url/qrdecode'),
           headers: {
             'Content-Type': 'application/json',
+            "Access-Control-Allow-Origin": _url
           },
           body: jsonEncode({
             'data': token,
-          }));
+          })).timeout(timeoutDelay);
       var result = jsonDecode(response.body) as Map<String, dynamic>;
       result['status'] = response.statusCode;
       return result;
+    } on TimeoutException {
+      return {'status': 408, 'error': 'Request timed out!'};
     } on Exception {
       return {'status': 500, 'message': 'An error occurred! Try again'};
     }
@@ -141,8 +145,7 @@ class PostData {
     var headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${instance.authToken ?? ''}',
-      "accept-encoding": "gzip, deflate, br",
-      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Origin": Configuration.apiUri,
     };
     String dataBody = jsonEncode(body);
 
@@ -152,31 +155,70 @@ class PostData {
         headers: headers,
         body: dataBody,
         encoding: Encoding.getByName('utf-8'),
-      ).timeout(const Duration(seconds: Configuration.timeout));
+      ).timeout(timeoutDelay);
       var res = jsonDecode(response.body) as Map<String, dynamic>;
+      if (kDebugMode) {
+        print(res);
+      }
       res['status'] = response.statusCode;
       instance.data = res;
-    } on TimeoutException catch (e) {
-      instance.data = {
-        'status': 408,
-        'message': 'Request timed out!'
-      };
-      if (kDebugMode) {
-        print({"err": e.toString()});
-      }
+    } on TimeoutException {
+      instance.data = {'status': 408, 'error': 'Request timed out!'};
     } on Exception catch (e) {
-      instance.data = {
-        'status': 500,
-        'message': 'An error occurred! Try again'
-      };
+      instance.data = {'status': 500, 'error': 'An error occurred! Try again'};
       if (kDebugMode) {
-        print({"err": e.toString()});
+        print({"err": e.toString(), 's': instance.data['status']});
       }
     }
 
-    if (kDebugMode) {
-      print(instance.data);
+    return instance;
+  }
+
+  /// Submit data to server using patch request and return response from server and save the response into the instance
+  static Future<PostData> patchData(
+      {required String relativePath,
+      String actualName = '',
+      String telephone = '',
+      int adminReference = 0,
+      String url = Configuration.apiUri,
+      required int userORGuestId}) async {
+    PostData instance = PostData(
+        username: '',
+        password: '',
+        actualName: actualName,
+        telephone: telephone,
+        adminReference: adminReference as String);
+
+    Map<String, String?> body = {
+      'telephone': instance.telephone,
+      'actual_name': instance.actualName,
+      'admin_id': instance.adminReference,
+    };
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${instance.authToken ?? ''}',
+      "Access-Control-Allow-Origin": Configuration.apiUri,
+    };
+    String dataBody = jsonEncode(body);
+
+    try {
+      Response response = await patch(
+              Uri.parse("$url/$relativePath/$userORGuestId"),
+              headers: headers,
+              body: dataBody)
+          .timeout(timeoutDelay);
+      var res = jsonDecode(response.body) as Map<String, dynamic>;
+      res['status'] = response.statusCode;
+      instance.data = res;
+    } on TimeoutException {
+      instance.data = {'status': 408, 'error': 'Request timed out!'};
+    } on Exception catch (e) {
+      instance.data = {'status': 500, 'error': 'An error occurred! Try again'};
+      if (kDebugMode) {
+        print({"err": e.toString(), 's': instance.data['status']});
+      }
     }
+
     return instance;
   }
 }

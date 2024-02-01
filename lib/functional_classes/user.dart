@@ -15,7 +15,7 @@ class User {
       username: json['name'],
       telephone: json['telephone'],
       actualName: json['actual_name'],
-      passwordModified: json['password_modified'] == 1 ? true : false,
+      passwordModified: json['password_modified'] == 1,
     );
   }
 }

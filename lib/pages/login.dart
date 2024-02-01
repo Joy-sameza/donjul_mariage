@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:marriage_app/config/config.dart';
 import 'package:marriage_app/functional_classes/post_data.dart';
+import 'package:marriage_app/functions/build_small_button.dart';
 import 'package:marriage_app/functions/snack_bar_method.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,8 +24,8 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   String username = '', password = '';
   bool passwordVisibility = true;
-  bool isAnimating = true;
-  ButtonState state = ButtonState.init;
+  bool _isAnimating = true;
+  ButtonState _state = ButtonState.init;
 
   @override
   void initState() {
@@ -37,8 +38,8 @@ class _LoginState extends State<Login> {
     final Size screenSize = MediaQuery.of(context).size;
     final double snackBarWidth = screenSize.width * 0.75;
     final double formHeight = screenSize.height * 0.525;
-    bool isLoading = isAnimating || state == ButtonState.init;
-    bool isDone = state == ButtonState.done;
+    bool isLoading = _isAnimating || _state == ButtonState.init;
+    bool isDone = _state == ButtonState.done;
     var appColorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Configuration.primaryAppColor,
@@ -229,13 +230,13 @@ class _LoginState extends State<Login> {
                 curve: Curves.easeIn,
                 alignment: Alignment.bottomCenter,
                 height: formHeight * 1.01,
-                width: state != ButtonState.init
+                width: _state != ButtonState.init
                     ? screenSize.width * 0.09
                     : screenSize.width * 0.9,
-                onEnd: () => setState(() => isAnimating = !isAnimating),
+                onEnd: () => setState(() => _isAnimating = !_isAnimating),
                 child: isLoading
                     ? _buildButton(context, snackBarWidth)
-                    : _buildSmallButton(isDone),
+                    : buildSmallButton(isDone),
               ),
             ),
           ],
@@ -261,22 +262,6 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Widget _buildSmallButton(bool isDone) {
-    final colors = isDone ? Colors.green : Login.mainBlue;
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: colors),
-      child: Center(
-        child: isDone
-            ? const Icon(Icons.done, size: 30, color: Colors.white)
-            : const CircularProgressIndicator(
-                color: Colors.white,
-                strokeCap: StrokeCap.round,
-              ),
-      ),
-    );
-  }
-
   void _submitForm(double snackBarWidth) async {
     // Unfocused keyboard
     FocusScope.of(context).unfocus();
@@ -285,31 +270,31 @@ class _LoginState extends State<Login> {
       return;
     }
     _formKey.currentState!.save();
-    PostData send = PostData(username: username, password: password);
-    setState(() => state = ButtonState.loading);
+    setState(() => _state = ButtonState.loading);
     await Future.delayed(const Duration(milliseconds: 750));
-    Map<String, dynamic> response = await send.postData(relativePath: 'login');
-    if (await response['error'] != null || await response['status'] != 200) {
-      setState(() => state = ButtonState.init);
+    PostData send = await PostData.submitData(relativePath: 'login', username: username, password: password);
+    Map<String, dynamic> response = send.data;
+    if (response['error'] != null || response['status'] != 200) {
+      setState(() => _state = ButtonState.init);
       // ignore: use_build_context_synchronously
       await snackBarMethod(
         context: context,
-        response: await response['error'] ?? await response['message'],
+        response: response['error'] ?? response['message'],
         width: snackBarWidth,
       );
       return;
     }
     TextInput.finishAutofillContext();
     final SharedPreferences preferences = await SharedPreferences.getInstance();
-    preferences.setString('auth_token', await response['token']);
-    preferences.setBool('isAdmin', await response['isAdmin']);
-    preferences.setInt('admin_id', await response['admin_id'] ?? -1);
-    setState(() => state = ButtonState.done);
+    preferences.setString('auth_token', response['token']);
+    preferences.setBool('isAdmin', response['isAdmin']);
+    preferences.setInt('admin_id', response['admin_id'] ?? -1);
+    setState(() => _state = ButtonState.done);
     await Future.delayed(const Duration(milliseconds: 1000));
-    if (await response['isAdmin']) {
+    if (response['isAdmin']) {
       // ignore: use_build_context_synchronously
       Navigator.pushReplacementNamed(context, '/admin', arguments: {
-        'admin_id': await response['admin_id'] ?? 0,
+        'admin_id': response['admin_id'] ?? 0,
       });
       return;
     }
