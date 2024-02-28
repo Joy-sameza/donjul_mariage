@@ -221,4 +221,10 @@ class PostData {
 
     return instance;
   }
+
+  static Future<void> deleteData({required String relativePath, required int id, String url = Configuration.apiUri}) async {
+    PostData instance = PostData(username: '', password: '');
+
+    Response response = await delete(Uri.parse('$url/delete/$id')).timeout(timeoutDelay);
+  }
 }

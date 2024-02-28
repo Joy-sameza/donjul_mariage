@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:marriage_app/config/config.dart';
-import 'package:marriage_app/functional_classes/user.dart';
+import 'package:marriage_app/models/user.dart';
 import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
 

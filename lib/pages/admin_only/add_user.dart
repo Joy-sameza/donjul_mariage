@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:marriage_app/functional_classes/post_data.dart';
-import 'package:marriage_app/functional_classes/user.dart';
+import 'package:marriage_app/models/user.dart';
 import 'package:marriage_app/functions/build_small_button.dart';
 import 'package:marriage_app/functions/snack_bar_method.dart';
 import 'package:marriage_app/config/config.dart';

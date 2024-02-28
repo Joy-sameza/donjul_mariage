@@ -206,7 +206,8 @@ class _LoginState extends State<Login> {
                               "Forgot Password?",
                               style: TextStyle(
                                 color: Theme.of(context).colorScheme.error,
-                                decorationColor: Theme.of(context).colorScheme.error,
+                                decorationColor:
+                                    Theme.of(context).colorScheme.error,
                                 decoration: TextDecoration.underline,
                                 decorationThickness: 2,
                                 fontSize: 16,
@@ -272,7 +273,8 @@ class _LoginState extends State<Login> {
     _formKey.currentState!.save();
     setState(() => _state = ButtonState.loading);
     await Future.delayed(const Duration(milliseconds: 750));
-    PostData send = await PostData.submitData(relativePath: 'login', username: username, password: password);
+    PostData send = await PostData.submitData(
+        relativePath: 'login', username: username, password: password);
     Map<String, dynamic> response = send.data;
     if (response['error'] != null || response['status'] != 200) {
       setState(() => _state = ButtonState.init);

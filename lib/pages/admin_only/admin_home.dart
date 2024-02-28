@@ -150,7 +150,14 @@ class _AdminHomeState extends State<AdminHome> {
       final String routeName = data[i]['routeName'];
       out.add(Expanded(
         child: ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
+            var r = routeName.split('/');
+            var rLast = r[r.length - 1];
+            if (rLast == 'user_list') {
+              await Navigator.pushNamed(context, routeName);
+              getUsersTotal();
+              return;
+            }
             Navigator.pushNamed(context, routeName);
           },
           style: ButtonStyle(
@@ -183,11 +190,12 @@ class _AdminHomeState extends State<AdminHome> {
                           Text(
                             buttonSubData,
                             style: TextStyle(
-                                fontSize: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall!
-                                        .fontSize! *
-                                    0.8),
+                              fontSize: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall!
+                                      .fontSize! *
+                                  0.8,
+                            ),
                           ),
                         ],
                       )

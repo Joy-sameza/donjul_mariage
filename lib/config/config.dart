@@ -5,7 +5,7 @@ class Configuration {
   const Configuration();
 
   static const String apiUri = "https://mariage.donjul-service.com";//"http://192.168.8.101/auth";
-  static const timeout = 10;
+  static const timeout = 30;
 
   //colors
   static const Color mainBlue = Color(0xff2f4f89);

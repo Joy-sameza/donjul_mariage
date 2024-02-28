@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 import 'package:marriage_app/config/config.dart';
 
@@ -15,10 +16,9 @@ class GetData {
   late int _status;
   final String _url = Configuration.apiUri;
 
-  Future<void> loadUsers({required int adminId, int? page, int? limit}) async {
+  Future<void> loadUsersORGuest({required bool isGuest, required int adminId, int? page, int? limit}) async {
     try {
-      
-      String uri = '$_url/userList?admin=$adminId';
+      String uri = isGuest ? '$_url/guestList?admin=$adminId' : '$_url/userList?admin=$adminId';
       if (page != null) {
         uri += '&page=$page';
       }
@@ -37,36 +37,11 @@ class GetData {
     } on TimeoutException {
       _data = {'status': 408, 'message': 'Request timed out! Try again'};
       _status = 408;
-    } on Exception {
+    } on Exception catch (e) {
       _data = {'status': 500, 'message': 'An error occurred! Try again'};
       _status = 500;
+      debugPrint(e.toString());
     }
   }
 
-  Future<void> loadGuests({required int adminId, int? page, int? limit}) async {
-    try {
-      String uri = '$_url/guestList?admin=$adminId';
-      if (page != null) {
-        uri += '&page=$page';
-      }
-      if (limit != null) {
-        uri += '&limit=$limit';
-      }
-      Response response = await get(
-        Uri.parse(uri),
-        headers: {
-          'Content-Type': 'application/json',
-          "Access-Control-Allow-Origin": _url,
-        },
-      );
-      _data = jsonDecode(response.body);
-      _status = response.statusCode;
-    } on TimeoutException {
-      _data = {'status': 408, 'message': 'Request timed out! Try again'};
-      _status = 408;
-    } on Exception {
-      _data = {'status': 500, 'message': 'An error occurred! Try again'};
-      _status = 500;
-    }
-  }
 }

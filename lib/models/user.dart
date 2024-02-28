@@ -1,11 +1,13 @@
 class User {
+  final int id;
   final String username;
   final String telephone;
   final String actualName;
   final bool passwordModified;
 
   User(
-      {required this.username,
+      {required this.id,
+      required this.username,
       required this.passwordModified,
       required this.telephone,
       required this.actualName});
@@ -16,6 +18,7 @@ class User {
       telephone: json['telephone'],
       actualName: json['actual_name'],
       passwordModified: json['password_modified'] == 1,
+      id: json['id'],
     );
   }
 }
