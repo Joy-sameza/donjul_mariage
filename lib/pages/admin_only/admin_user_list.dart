@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:marriage_app/config/config.dart';
 import 'package:marriage_app/functional_classes/get_data.dart';
 import 'package:marriage_app/models/user.dart';
@@ -24,7 +26,8 @@ class _UserListState extends State<UserList> {
   bool _isLoading = false;
   bool _timeoutLoading = false;
   bool _hasMore = true;
-  int? currentPage;
+  int? currentPage, _adminId;
+  bool _socketException = false;
 
   _scrollControllerListener() {
     double triggerPoint = _scrollController.position.maxScrollExtent - 40.0;
@@ -52,7 +55,7 @@ class _UserListState extends State<UserList> {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final double screenWidth = screenSize.width;
-    final double screenHeight = screenSize.height;
+    // final double screenHeight = screenSize.height;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Configuration.primaryAppColor,
@@ -62,7 +65,7 @@ class _UserListState extends State<UserList> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.only(left: 8, right: 8, top: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         child: _timeoutLoading
             ? CustomError(
                 errorMessage: 'Check your internet connection',
@@ -80,6 +83,12 @@ class _UserListState extends State<UserList> {
     }
     if (_isListEmpty) {
       return const LoadingEmpty(message: 'No user found');
+    }
+    if (_socketException) {
+      return ListError(
+        retry: _retryLoading,
+        exception: const SocketException('No internet connection'),
+      );
     }
     return RefreshIndicator(
       displacement: 50,
@@ -178,16 +187,12 @@ class _UserListState extends State<UserList> {
               'avatarRadius': avatarRadius,
               'avatarText': avatarText,
               'user': user,
+              'adminId': _adminId
             });
           },
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          onLongPress: () {
-            // Navigator.pushNamed(context, '/admin/user_edit', arguments: {
-            //
-            // });
-          },
           leading: Hero(
             tag: "${user.username}$index",
             child: CircleAvatar(
@@ -216,13 +221,18 @@ class _UserListState extends State<UserList> {
     setState(() => _isLoading = true);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? adminId = prefs.getInt('admin_id');
+    _adminId = adminId ?? 0;
     GetData getData = GetData();
     await getData.loadUsersORGuest(
       adminId: adminId ?? 0,
       isGuest: false,
       page: (currentPage ?? 0) + 1,
     );
-    if (getData.status != 200 && getData.status != 408) {
+    if (getData.status == 503) {
+      setState(() => _isLoading = false);
+      setState(() => _socketException = true);
+    }
+    if (getData.status != 200 && getData.status != 408 && getData.status != 503) {
       setState(() => _isLoading = false);
       setState(() => _errorLoading = true);
       return;
@@ -232,6 +242,7 @@ class _UserListState extends State<UserList> {
       setState(() => _timeoutLoading = true);
       return;
     }
+
     var x = getData.data as Map<String, dynamic>;
     var requestPage = x['page'] as int;
     var perPage = x['per_page'] as int;

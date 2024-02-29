@@ -7,7 +7,7 @@ import 'package:marriage_app/pages/admin_only/admin_home.dart';
 import 'package:marriage_app/pages/admin_only/add_user.dart';
 import 'package:marriage_app/pages/admin_only/admin_user_details.dart';
 import 'package:marriage_app/pages/admin_only/admin_user_list.dart';
-import 'package:marriage_app/pages/home.dart';
+import 'package:marriage_app/pages/user_home.dart';
 import 'package:marriage_app/pages/loading_screen.dart';
 import 'package:marriage_app/pages/login.dart';
 import 'package:marriage_app/pages/result_screen.dart';
@@ -36,7 +36,7 @@ class MarriageApp extends StatelessWidget {
       title: 'Marriage App',
       routes: {
         '/': (context) => const Splash(),
-        '/home': (context) => const Home(),
+        '/home': (context) => const UserHome(),
         '/login': (context) => const Login(),
         '/result': (context) => const Result(),
         '/loading': (context) => const Loading(),

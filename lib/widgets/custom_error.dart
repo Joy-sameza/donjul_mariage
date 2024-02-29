@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 class CustomError extends StatelessWidget {
@@ -15,6 +14,8 @@ class CustomError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String exceptionMessage = exception?.toString() ?? '';
+    String displayMessage = exceptionMessage.isNotEmpty ? exceptionMessage : errorMessage;
     var errorIcon = Icons.error_outline_rounded;
     if (exception is TimeoutException) {
       errorIcon = Icons.cloud_off_rounded;
@@ -34,7 +35,7 @@ class CustomError extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'An error occurred',
+            displayMessage.split(':').last,
             style: TextStyle(
               fontSize: Theme.of(context).textTheme.titleLarge!.fontSize,
               fontWeight: FontWeight.bold,

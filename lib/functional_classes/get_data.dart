@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
@@ -37,10 +38,12 @@ class GetData {
     } on TimeoutException {
       _data = {'status': 408, 'message': 'Request timed out! Try again'};
       _status = 408;
-    } on Exception catch (e) {
+    } on SocketException {
+      _data = {'status': 503, 'message': 'No internet connection!'};
+      _status = 503;
+    } on Exception {
       _data = {'status': 500, 'message': 'An error occurred! Try again'};
       _status = 500;
-      debugPrint(e.toString());
     }
   }
 
