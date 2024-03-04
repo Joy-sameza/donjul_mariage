@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
-Future<void> snackBarMethod(
+snackBarMethod(
     {required BuildContext context,
     String? message,
     int? duration,
-      bool hasError = false,
-    double? width}) async {
-
+    bool hasError = false,
+    double? width}) {
   final Size screenSize = MediaQuery.of(context).size;
   width = width ?? screenSize.width * 0.75;
 
@@ -22,7 +21,7 @@ Future<void> snackBarMethod(
     }
   };
 
-  ScaffoldMessenger.of(context).showSnackBar(
+  return ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
         message ?? 'Something went wrong',
@@ -36,7 +35,8 @@ Future<void> snackBarMethod(
       elevation: 10,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      backgroundColor: snackBarColor[hasError ? 'error' : 'success']!['container'],
+      backgroundColor:
+          snackBarColor[hasError ? 'error' : 'success']!['container'],
       duration: Duration(seconds: duration ?? 3),
     ),
   );

@@ -9,6 +9,7 @@ import 'package:marriage_app/widgets/list_empty.dart';
 import 'package:marriage_app/widgets/list_loading_err.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:very_good_infinite_list/very_good_infinite_list.dart';
 
 class UserList extends StatefulWidget {
   const UserList({super.key});
@@ -29,7 +30,7 @@ class _UserListState extends State<UserList> {
   bool _socketException = false;
 
   _scrollControllerListener() {
-    double triggerPoint = _scrollController.position.maxScrollExtent - 40.0;
+    double triggerPoint = _scrollController.position.maxScrollExtent - 200.0;
     if (_scrollController.position.pixels >= triggerPoint &&
         _hasMore &&
         !_isLoading) {
@@ -48,6 +49,17 @@ class _UserListState extends State<UserList> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void reassemble() {
+    ScrollPosition currentPos = _scrollController.position;
+    super.reassemble();
+    _scrollController.animateTo(
+      currentPos.pixels,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -97,10 +109,10 @@ class _UserListState extends State<UserList> {
         itemCount: _isLoading ? 15 : _userList.length + 1,
         itemBuilder: (context, index) {
           if (_isLoading && index >= _userList.length) {
-            return _buildUserShimmer(context, index);
+            return _buildUserShimmer(context);
           }
           if (index == _userList.length && _hasMore && !_isLoading) {
-            return _buildUserShimmer(context, index);
+            return _buildUserShimmer(context);
           }
           if (index == _userList.length && !_hasMore && !_isLoading) {
             return Padding(
@@ -135,7 +147,7 @@ class _UserListState extends State<UserList> {
     return _loadUsers();
   }
 
-  Widget _buildUserShimmer(BuildContext context, int index) {
+  Widget _buildUserShimmer(BuildContext context) {
     final shimmerBaseColor = Configuration.mainGrey.withOpacity(0.6);
     final shimmerHighlightColor = Configuration.mainGrey.withOpacity(0.4);
 
@@ -181,13 +193,15 @@ class _UserListState extends State<UserList> {
       children: [
         ListTile(
           onTap: () async {
-            var result = await Navigator.pushNamed(context, '/admin/user_details', arguments: {
-              'index': indexInList,
-              'avatarRadius': avatarRadius,
-              'avatarText': avatarText,
-              'user': user,
-              'adminId': _adminId
-            });
+            var result = await Navigator.pushNamed(
+                context, '/admin/user_details',
+                arguments: {
+                  'index': indexInList,
+                  'avatarRadius': avatarRadius,
+                  'avatarText': avatarText,
+                  'user': user,
+                  'adminId': _adminId
+                });
 
             var [isSuccess, indx] = result as List;
             if (isSuccess) {
@@ -220,17 +234,21 @@ class _UserListState extends State<UserList> {
     );
   }
 
+  getAdminId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? adminId = prefs.getInt('admin_id');
+    _adminId = adminId ?? 0;
+  }
+
   Future<void> _loadUsers() async {
-    if (_isLoading) {
-      return;
-    }
+    if (_isLoading) return;
     setState(() => _isLoading = true);
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? adminId = prefs.getInt('admin_id');
     _adminId = adminId ?? 0;
     GetData getData = GetData();
     await getData.loadUsersORGuest(
-      adminId: adminId ?? 0,
+      adminId: _adminId ?? 0,
       isGuest: false,
       page: (currentPage ?? 0) + 1,
     );
@@ -241,7 +259,9 @@ class _UserListState extends State<UserList> {
       });
       return;
     }
-    if (getData.status != 200 && getData.status != 408 && getData.status != 503) {
+    if (getData.status != 200 &&
+        getData.status != 408 &&
+        getData.status != 503) {
       setState(() => _isLoading = false);
       setState(() => _errorLoading = true);
       return;
@@ -284,5 +304,23 @@ class _UserListState extends State<UserList> {
       _userList.addAll(tempUserList);
       _isLoading = false;
     });
+  }
+
+  Widget listContent() {
+    return InfiniteList(
+      itemCount: _userList.length,
+      itemBuilder: (BuildContext context, int index) {
+        return _buildUser(context, index, MediaQuery.of(context).size.width);
+      },
+      onFetchData: _loadUsers,
+      loadingBuilder: _buildUserShimmer,
+      hasReachedMax: !_hasMore,
+      separatorBuilder: (context, index) {
+        return const Divider();
+      },
+      isLoading: _isLoading,
+      hasError: _errorLoading,
+      scrollController: _scrollController,
+    );
   }
 }

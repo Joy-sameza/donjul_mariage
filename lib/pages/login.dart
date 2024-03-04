@@ -279,7 +279,7 @@ class _LoginState extends State<Login> {
     if (response['error'] != null || response['status'] != 200) {
       setState(() => _state = ButtonState.init);
       // ignore: use_build_context_synchronously
-      await snackBarMethod(
+      snackBarMethod(
         context: context,
         message: response['error'] ?? response['message'],
         width: snackBarWidth,
