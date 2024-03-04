@@ -10,13 +10,10 @@ class DeleteData {
   final int userId;
   final String _url = Configuration.apiUri;
 
-  Future<Map<String, dynamic>> deleteData({required String relativePath}) async {
-    var requestUri = Uri.parse('$_url/$relativePath');
-    var requestParams = {
-      'adminId': adminId,
-      'userId': userId,
-    };
-    requestUri = requestUri.replace(queryParameters: requestParams);
+  Future<Map<String, dynamic>> deleteData(
+      {required String relativePath}) async {
+    var uri = '$_url/$relativePath?adminId=$adminId&userId=$userId';
+    var requestUri = Uri.parse(uri);
     print(requestUri.toString());
     try {
       Response response = await delete(

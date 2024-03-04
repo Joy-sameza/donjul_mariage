@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:marriage_app/config/config.dart';
-import 'package:marriage_app/functional_classes/delete_data.dart';
+import 'package:marriage_app/data_layer/delete_data.dart';
+import 'package:marriage_app/functions/snack_bar_method.dart';
 import 'package:marriage_app/models/user.dart';
+import 'package:marriage_app/utils/enums.dart';
 import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-enum UserAction { edit, delete }
 
 class UserDetails extends StatefulWidget {
   const UserDetails({super.key});
@@ -15,7 +15,7 @@ class UserDetails extends StatefulWidget {
 }
 
 class _UserDetailsState extends State<UserDetails> {
-  UserAction? _userAction;
+  AdminActionOnUser? _userAction;
   @override
   Widget build(BuildContext context) {
     final Map<String, dynamic> args =
@@ -32,36 +32,43 @@ class _UserDetailsState extends State<UserDetails> {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          PopupMenuButton<UserAction>(
+          PopupMenuButton<AdminActionOnUser>(
             initialValue: _userAction,
             icon: const Icon(Icons.more_vert),
             onSelected: (value) async {
               switch (value) {
-                case UserAction.edit:
+                case AdminActionOnUser.edit:
                   Navigator.pushNamed(context, '/admin/add_user', arguments: {
                     'user': user,
                     'submitAction': 'update',
                   });
                   break;
-                case UserAction.delete:
+                case AdminActionOnUser.delete:
                   Map<String, dynamic> deleteData = await DeleteData(
                     adminId: adminId,
                     userId: user.id,
                   ).deleteData(relativePath: 'delete');
-                  print(deleteData);
-                  break;
-                default:
+
+                  bool hasError = deleteData['status'] != 200;
+                  // ignore: use_build_context_synchronously
+                  snackBarMethod(
+                    context: context,
+                    message: deleteData['message']!,
+                    hasError: hasError,
+                  );
+                  if (!context.mounted) return;
+                  Navigator.pop(context, [!hasError, index]);
                   break;
               }
             },
             itemBuilder: (itemContext) {
               return [
                 const PopupMenuItem(
-                  value: UserAction.edit,
+                  value: AdminActionOnUser.edit,
                   child: Text('Edit the user'),
                 ),
                 const PopupMenuItem(
-                  value: UserAction.delete,
+                  value: AdminActionOnUser.delete,
                   child: Text('Delete the user'),
                 ),
               ];
@@ -166,16 +173,16 @@ class _UserDetailsState extends State<UserDetails> {
               ),
               if (i < data.length - 1)
                 Expanded(
-                  child: Text(
+                  child: SelectableText(
                     data[i]['value']!,
                     style: TextStyle(
                       color: appColorScheme.onPrimaryContainer,
                       fontSize: appTextTheme.bodyMedium!.fontSize! * 1.25,
                       fontWeight: FontWeight.w500,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    maxLines: 2,
+                    // overflow: TextOverflow.ellipsis,
+                    // softWrap: false,
+                    // maxLines: 2,
                   ),
                 )
               else
@@ -191,7 +198,7 @@ class _UserDetailsState extends State<UserDetails> {
                   child: Link(
                     uri: Uri(scheme: 'tel', path: data[i]['value']!),
                     builder: (context, followLink) {
-                      return Text(
+                      return SelectableText(
                         data[i]['value']!,
                         style: TextStyle(
                           color: appColorScheme.secondary,

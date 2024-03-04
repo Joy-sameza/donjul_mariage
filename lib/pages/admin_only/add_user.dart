@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:marriage_app/functional_classes/post_data.dart';
+import 'package:marriage_app/data_layer/post_data.dart';
 import 'package:marriage_app/models/user.dart';
 import 'package:marriage_app/functions/build_small_button.dart';
 import 'package:marriage_app/functions/snack_bar_method.dart';
@@ -277,7 +277,7 @@ class _AddUserState extends State<AddUser> {
       // ignore: use_build_context_synchronously
       await snackBarMethod(
         context: context,
-        response: await response['message'] ?? await response['error'],
+        message: await response['message'] ?? await response['error'],
         duration: 8,
         width: snackBarWidth,
       );

@@ -2,24 +2,41 @@ import 'package:flutter/material.dart';
 
 Future<void> snackBarMethod(
     {required BuildContext context,
-    String? response,
+    String? message,
     int? duration,
-    required double width}) async {
+      bool hasError = false,
+    double? width}) async {
+
+  final Size screenSize = MediaQuery.of(context).size;
+  width = width ?? screenSize.width * 0.75;
+
+  ThemeData themeContext = Theme.of(context);
+  Map<String, Map<String, Color>> snackBarColor = {
+    'success': {
+      'container': themeContext.colorScheme.tertiaryContainer,
+      'text': themeContext.colorScheme.onTertiaryContainer
+    },
+    'error': {
+      'container': themeContext.colorScheme.errorContainer,
+      'text': themeContext.colorScheme.error
+    }
+  };
+
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        response ?? 'Something went wrong',
+        message ?? 'Something went wrong',
         style: TextStyle(
-          color: Theme.of(context).colorScheme.error,
+          color: snackBarColor[hasError ? 'error' : 'success']!['text'],
           fontWeight: FontWeight.bold,
-          fontSize: Theme.of(context).textTheme.bodyMedium!.fontSize,
+          fontSize: themeContext.textTheme.bodyMedium!.fontSize,
         ),
       ),
       width: width,
       elevation: 10,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      backgroundColor: snackBarColor[hasError ? 'error' : 'success']!['container'],
       duration: Duration(seconds: duration ?? 3),
     ),
   );

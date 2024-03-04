@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:marriage_app/config/config.dart';
-import 'package:marriage_app/functional_classes/post_data.dart';
+import 'package:marriage_app/data_layer/post_data.dart';
 import 'package:marriage_app/functions/build_small_button.dart';
 import 'package:marriage_app/functions/snack_bar_method.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -281,7 +281,7 @@ class _LoginState extends State<Login> {
       // ignore: use_build_context_synchronously
       await snackBarMethod(
         context: context,
-        response: response['error'] ?? response['message'],
+        message: response['error'] ?? response['message'],
         width: snackBarWidth,
       );
       return;

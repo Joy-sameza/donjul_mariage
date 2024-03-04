@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:marriage_app/config/config.dart';
-import 'package:marriage_app/functional_classes/get_data.dart';
+import 'package:marriage_app/data_layer/get_data.dart';
 import 'package:marriage_app/models/user.dart';
 import 'package:marriage_app/widgets/custom_error.dart';
 import 'package:marriage_app/widgets/list_empty.dart';
@@ -163,10 +162,10 @@ class _UserListState extends State<UserList> {
     );
   }
 
-  Widget _buildUser(BuildContext context, int index, double screenWidth) {
+  Widget _buildUser(BuildContext context, int indexInList, double screenWidth) {
     final double avatarRadius = screenWidth * 0.06;
     final double dividerIndent = screenWidth * 0.175;
-    final User user = _userList[index];
+    final User user = _userList[indexInList];
     final String userName = user.actualName;
     final nameList = userName.split(' ');
     String avatarText = '';
@@ -181,20 +180,27 @@ class _UserListState extends State<UserList> {
     return Column(
       children: [
         ListTile(
-          onTap: () {
-            Navigator.pushNamed(context, '/admin/user_details', arguments: {
-              'index': index,
+          onTap: () async {
+            var result = await Navigator.pushNamed(context, '/admin/user_details', arguments: {
+              'index': indexInList,
               'avatarRadius': avatarRadius,
               'avatarText': avatarText,
               'user': user,
               'adminId': _adminId
             });
+
+            var [isSuccess, indx] = result as List;
+            if (isSuccess) {
+              setState(() {
+                _userList.removeAt(indx);
+              });
+            }
           },
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           leading: Hero(
-            tag: "${user.username}$index",
+            tag: "${user.username}$indexInList",
             child: CircleAvatar(
               radius: avatarRadius,
               child: Text(avatarText),
@@ -203,7 +209,7 @@ class _UserListState extends State<UserList> {
           title: Text(userName,
               style: const TextStyle(fontWeight: FontWeight.w500)),
         ),
-        if (index < _userList.length - 1)
+        if (indexInList < _userList.length - 1)
           Divider(
             thickness: 1,
             // color: Colors.black,
@@ -229,8 +235,11 @@ class _UserListState extends State<UserList> {
       page: (currentPage ?? 0) + 1,
     );
     if (getData.status == 503) {
-      setState(() => _isLoading = false);
-      setState(() => _socketException = true);
+      setState(() {
+        _isLoading = false;
+        _socketException = true;
+      });
+      return;
     }
     if (getData.status != 200 && getData.status != 408 && getData.status != 503) {
       setState(() => _isLoading = false);
@@ -238,8 +247,10 @@ class _UserListState extends State<UserList> {
       return;
     }
     if (getData.status == 408) {
-      setState(() => _isLoading = false);
-      setState(() => _timeoutLoading = true);
+      setState(() {
+        _isLoading = false;
+        _timeoutLoading = true;
+      });
       return;
     }
 
@@ -251,7 +262,9 @@ class _UserListState extends State<UserList> {
       setState(() {
         _isLoading = false;
         _isListEmpty = true;
+        _hasMore = false;
       });
+      return;
     }
     var temp = x['users'] as List;
     if (perPage * requestPage >= totalItems) {
@@ -261,19 +274,15 @@ class _UserListState extends State<UserList> {
       });
     }
     currentPage = requestPage;
-    if (temp.isEmpty) {
-      setState(() => _isLoading = false);
-      setState(() => _isListEmpty = true);
-      return;
-    }
-    temp.sort((a, b) => a['actual_name']
-        .toString()
-        .toLowerCase()
-        .compareTo(b['actual_name'].toString().toLowerCase()));
+
+    final List<User> tempUserList = <User>[];
     for (Map<String, dynamic> user in temp) {
-      _userList.add(User.fromJson(user));
+      tempUserList.add(User.fromJson(user));
     }
     prefs.setInt('user_count', x['total_items']);
-    setState(() => _isLoading = false);
+    setState(() {
+      _userList.addAll(tempUserList);
+      _isLoading = false;
+    });
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:marriage_app/functional_classes/post_data.dart';
+import 'package:marriage_app/data_layer/post_data.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class Result extends StatefulWidget {
