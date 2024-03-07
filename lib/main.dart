@@ -15,6 +15,7 @@ import 'package:marriage_app/pages/splash_screen.dart';
 import 'package:marriage_app/config/config.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MarriageApp());
 }
 
